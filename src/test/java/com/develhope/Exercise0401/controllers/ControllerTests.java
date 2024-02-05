@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -48,12 +49,45 @@ public class ControllerTests {
 
         return studentEntity;
     }
+    private void createAndSaveFourStudents() {
+
+        studentRepository.deleteAll();
+
+        StudentEntity studentEntity = new StudentEntity();
+        studentEntity.setId(Long.valueOf(1));
+        studentEntity.setName("Mario");
+        studentEntity.setSurname("Rossi");
+        studentEntity.setIsWorking(false);
+
+        StudentEntity studentEntityTwo = new StudentEntity();
+        studentEntity.setId(Long.valueOf(2));
+        studentEntity.setName("Anna");
+        studentEntity.setSurname("Mannino");
+        studentEntity.setIsWorking(false);
+
+        StudentEntity studentEntityThree = new StudentEntity();
+        studentEntity.setId(Long.valueOf(3));
+        studentEntity.setName("Luca");
+        studentEntity.setSurname("Bianchi");
+        studentEntity.setIsWorking(false);
+
+        StudentEntity studentEntityFour = new StudentEntity();
+        studentEntity.setId(Long.valueOf(4));
+        studentEntity.setName("Romano");
+        studentEntity.setSurname("Fini");
+        studentEntity.setIsWorking(false);
+
+        studentRepository.save(studentEntity);
+        studentRepository.save(studentEntityTwo);
+        studentRepository.save(studentEntityThree);
+        studentRepository.save(studentEntityFour);}
+
 
     @Test
     void addStudent() throws Exception {
         StudentEntity studentEntity = createStudent();
         String studentJSON = objectMapper.writeValueAsString(studentEntity);
-        MvcResult result = this.mockMvc.perform(post("/newstudent")
+        MvcResult result = this.mockMvc.perform(post("/v1/newstudent")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(studentJSON))
                 .andDo(print())
@@ -65,28 +99,23 @@ public class ControllerTests {
 
     @Test
     void showStudents() throws Exception {
-        studentRepository.deleteAll();
+        createAndSaveFourStudents();
 
-        studentRepository.save(createStudent());
-        studentRepository.save(createStudent());
-        studentRepository.save(createStudent());
-        studentRepository.save(createStudent());
-
-        MvcResult result = mockMvc.perform(get("/students"))
+        MvcResult result = mockMvc.perform(get("/v1/students"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();
 
         List<StudentEntity> studentsFromResponse = objectMapper.readValue(result.getResponse()
                 .getContentAsString(),List.class);
-        assertEquals(studentsFromResponse,4);
+        assertEquals(4, studentsFromResponse.size());
         System.out.println("Students in DB are: " + studentsFromResponse.size());
     }
 
     @Test
     void showStudent() throws Exception {
-        StudentEntity student = createStudent();
-        MvcResult result = this.mockMvc.perform(get("/user/" + student.getId()))
+        StudentEntity student = studentRepository.save(createStudent());
+        MvcResult result = this.mockMvc.perform(get("/v1/student/" + student.getId()))
                 .andDo(print()).andExpect(status().isOk())
                 .andReturn();
 
@@ -99,7 +128,7 @@ public class ControllerTests {
     void deleteStudent() throws Exception {
         StudentEntity student = studentRepository.save(createStudent());
 
-        this.mockMvc.perform(delete("/user/"+student.getId()))
+        this.mockMvc.perform(delete("/v1/delstudent/"+student.getId()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();
@@ -115,7 +144,7 @@ public class ControllerTests {
         String newName = "Paolo";
 
         String studentJSON = objectMapper.writeValueAsString(student);
-        MvcResult result = this.mockMvc.perform(patch("/updatename/"+student.getId()+"?newName="+newName)
+        MvcResult result = this.mockMvc.perform(patch("/v1/updatename/"+student.getId()+"?newName="+newName)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(studentJSON))
                 .andDo(print())
@@ -136,7 +165,7 @@ public class ControllerTests {
         Boolean newStatus = true;
 
         String studentJSON = objectMapper.writeValueAsString(student);
-        MvcResult result = this.mockMvc.perform(patch("/updatworking/"+student.getId()+"?working="+newStatus)
+        MvcResult result = this.mockMvc.perform(patch("/v1/updateworking/"+student.getId()+"?working="+newStatus)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(studentJSON))
                 .andDo(print())
